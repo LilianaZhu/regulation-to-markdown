@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "regulation-to-markdown": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "regulation_to_markdown.mcp_server"
+      ],
+      "env": {
+        "MINERU_API_TOKEN": "${MINERU_API_TOKEN}",
+        "PYTHONUTF8": "1"
+      }
+    }
+  }
+}

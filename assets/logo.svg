@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Regulation to Markdown</title>
+  <rect width="128" height="128" rx="24" fill="#111827"/>
+  <path d="M35 22h40l18 18v66H35z" fill="#f9fafb"/>
+  <path d="M75 22v20h18" fill="none" stroke="#111827" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M48 59h32M48 72h32M48 85h21" stroke="#2563eb" stroke-width="7" stroke-linecap="round"/>
+</svg>

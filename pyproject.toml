@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "regulation-to-markdown"
+version = "0.1.0"
+description = "Source-grounded PDF to Markdown workflow for Cursor"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "httpx==0.28.1",
+  "mcp==2.0.0",
+  "pydantic==2.13.4",
+  "PyMuPDF==1.28.2",
+  "pypdf==6.14.2",
+  "PyYAML==6.0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==9.1.1",
+  "respx==0.23.1",
+  "ruff==0.16.1",
+]
+
+[project.scripts]
+reg2md = "regulation_to_markdown.cli:main"
+reg2md-mcp = "regulation_to_markdown.mcp_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

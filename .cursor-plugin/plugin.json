@@ -1,0 +1,32 @@
+{
+  "name": "regulation-to-markdown",
+  "version": "0.1.0",
+  "description": "Convert official PDFs to source-grounded Markdown with MinerU, deterministic processing, AI review, and release validation.",
+  "author": {
+    "name": "Lilianablog"
+  },
+  "homepage": "https://github.com/Lilianablog/regulation-to-markdown",
+  "repository": "https://github.com/Lilianablog/regulation-to-markdown",
+  "license": "MIT",
+  "logo": "assets/logo.svg",
+  "keywords": [
+    "pdf",
+    "markdown",
+    "mineru",
+    "regulation",
+    "compliance"
+  ],
+  "variables": {
+    "type": "object",
+    "properties": {
+      "MINERU_API_TOKEN": {
+        "type": "string",
+        "title": "MinerU API Token",
+        "description": "Token created on the MinerU API management page."
+      }
+    },
+    "required": [
+      "MINERU_API_TOKEN"
+    ]
+  }
+}
