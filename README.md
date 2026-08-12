@@ -62,7 +62,7 @@ Cursor Marketplace. Give Cursor Agent this prompt:
 
 ```text
 Review and install this Cursor Plugin for me:
-https://github.com/Lilianablog/regulation-to-markdown
+https://github.com/LilianaZhu/regulation-to-markdown
 
 Before installation, confirm that no secret is hard-coded. On Windows, clone the
 repository and run install.ps1 with -InstallLocalPlugin. Ask for my approval
@@ -85,7 +85,7 @@ Requirements:
 From PowerShell:
 
 ```powershell
-git clone https://github.com/Lilianablog/regulation-to-markdown.git
+git clone https://github.com/LilianaZhu/regulation-to-markdown.git
 Set-Location .\regulation-to-markdown
 powershell -ExecutionPolicy Bypass -File .\install.ps1 -InstallLocalPlugin
 ```
@@ -180,7 +180,7 @@ Raw files are immutable evidence. Do not place `work/` under version control.
 
 Share this public repository URL:
 
-<https://github.com/Lilianablog/regulation-to-markdown>
+<https://github.com/LilianaZhu/regulation-to-markdown>
 
 Recipients can give the URL to Cursor Agent using the reviewed-install prompt
 above, or clone and run the installer manually. No Marketplace submission is

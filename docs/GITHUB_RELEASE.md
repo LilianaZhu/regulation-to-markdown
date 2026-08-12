@@ -28,7 +28,7 @@
 3. Create a GitHub release using the matching `CHANGELOG.md` entry.
 4. Share:
 
-   <https://github.com/Lilianablog/regulation-to-markdown>
+   <https://github.com/LilianaZhu/regulation-to-markdown>
 
 This project is distributed directly from GitHub and is not submitted to the
 Cursor Marketplace.

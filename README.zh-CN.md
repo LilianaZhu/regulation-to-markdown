@@ -37,7 +37,7 @@ Cursor Agent：
 
 ```text
 请审查并安装这个 Cursor 插件：
-https://github.com/Lilianablog/regulation-to-markdown
+https://github.com/LilianaZhu/regulation-to-markdown
 
 安装前确认仓库没有硬编码密钥。Windows 下克隆仓库并执行 install.ps1
 -InstallLocalPlugin；执行命令前先征得我的同意。在我明确确认分页方案之前，
@@ -58,7 +58,7 @@ GitHub 链接不是静默安装链接；Cursor 应在克隆和执行安装脚本
 从 PowerShell 运行：
 
 ```powershell
-git clone https://github.com/Lilianablog/regulation-to-markdown.git
+git clone https://github.com/LilianaZhu/regulation-to-markdown.git
 Set-Location .\regulation-to-markdown
 powershell -ExecutionPolicy Bypass -File .\install.ps1 -InstallLocalPlugin
 ```
@@ -137,7 +137,7 @@ MinerU任务ID和当前状态都记录在 `job.json`，失败后可以继续查�
 
 直接分享公开仓库：
 
-<https://github.com/Lilianablog/regulation-to-markdown>
+<https://github.com/LilianaZhu/regulation-to-markdown>
 
 接收者可以把链接和上面的安装提示词交给 Cursor Agent，也可以手动克隆并运行
 安装脚本，无需 Cursor Marketplace。

@@ -18,7 +18,7 @@ def test_cursor_plugin_manifest_and_skill():
     )
 
     assert manifest["name"] == "regulation-to-markdown"
-    assert manifest["repository"].endswith("/Lilianablog/regulation-to-markdown")
+    assert manifest["repository"].endswith("/LilianaZhu/regulation-to-markdown")
     assert manifest["logo"] == "assets/logo.svg"
     assert "MINERU_API_TOKEN" in manifest["variables"]["properties"]
     assert skill.startswith("---\nname: regulation-to-markdown\n")
