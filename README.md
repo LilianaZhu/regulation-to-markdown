@@ -2,204 +2,161 @@
 
 [中文使用说明](README.zh-CN.md)
 
-A Cursor Plugin for converting official regulation PDFs and other authoritative
-documents into source-grounded Markdown.
+A portable Agent Plugin for converting official regulation PDFs and other
+authoritative documents into source-grounded Markdown.
 
-The plugin combines:
+It combines:
 
 - the official MinerU Precision API for extraction;
-- local Python for deterministic PDF splitting, normalization, merging, and
-  validation;
-- Cursor Agent for source comparison, source-grounded repair, and independent
-  verification.
+- deterministic local Python for splitting, normalization, merging, evidence
+  tracking, export, and release validation;
+- an agent skill for page-by-page comparison, source-grounded repair, and
+  independent verification.
 
-It does not assume Indonesian BAB/Pasal structure. Agent detects the structure
-used by each source document.
+The official PDF is always the legal source of truth.
 
-## What the team member does
+## Package formats
 
-1. Put the official PDF in a local Cursor workspace.
-2. Run `/regulation-to-markdown @document.pdf`, or ask Agent:
-   `Use regulation-to-markdown on @document.pdf`.
-3. Choose Reliable or Economical when Cursor displays the split plan.
-4. Wait for MinerU extraction.
-5. Review any high-risk source repairs when Agent asks.
-6. Receive:
-   - `<document>_FINAL.md`;
-   - `validation-report.md`.
+This repository intentionally ships two compatible manifests:
 
-The regulation knowledge base should ingest only `FINAL.md`. The validation
-report is retained as an audit record.
+- `plugin.json` — Agent Plugins 1.0.0 portable manifest;
+- `.claude-plugin/plugin.json` — Claude Code/Desktop manifest with secure
+  MinerU Token configuration.
 
-## Safety model
+The shared `skills/` directory and Python MCP implementation are the single
+source package. Claude's installed cache and runtime under plugin data are
+managed artifacts, not editable source copies.
 
-- MinerU output is not treated as authoritative.
+## Install in Claude Code or Claude Desktop
+
+Add this repository as a marketplace:
+
+```text
+/plugin marketplace add https://github.com/LilianaZhu/regulation-to-markdown
+/plugin install regulation-to-markdown@liliana-legal-tools
+/reload-plugins
+```
+
+When enabling the plugin, enter the MinerU API Token created at:
+
+<https://mineru.net/apiManage/token>
+
+The option is declared sensitive and stored by Claude's credential mechanism.
+Never paste the Token into chat, Git, job files, or validation reports.
+
+For local development:
+
+```powershell
+claude --plugin-dir C:\path\to\regulation-to-markdown
+```
+
+Or:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Dev -InstallClaudePlugin
+```
+
+## Other Agent Plugin clients
+
+Clients implementing Agent Plugins 1.0.0 can load the root `plugin.json` and
+`mcp.json`. Because the portable standard does not define credential storage,
+set `MINERU_API_TOKEN` in the host environment before enabling MCP.
+
+The MCP runtime is installed into the client's persistent plugin data directory,
+not into the plugin source tree.
+
+## Use
+
+Claude Code skill invocation:
+
+```text
+/regulation-to-markdown:regulation-to-markdown @official-regulation.pdf
+```
+
+Workflow:
+
+1. inspect source PDF and propose Reliable/Economical split plans;
+2. require explicit user confirmation before MinerU upload;
+3. preserve MinerU raw output and deterministically normalize Markdown;
+4. merge only after overlap hashes match;
+5. audit the merged Markdown against PDF text and rendered pages;
+6. apply only approved, source-verified repairs;
+7. independently verify the final file;
+8. pass release gates and export only `FINAL.md` plus
+   `validation-report.md`.
+
+The implementation does not assume Indonesian BAB/Pasal structure. The agent
+detects the source document's own hierarchy.
+
+## Safety guarantees
+
+- MinerU output is evidence, not authority.
 - Python formatting may not change the visible text stream.
-- AI audit does not edit files.
-- Legal wording changes require an exact PDF page, source quote, explicit
-  approval, and independent verification.
-- Official-source typos are preserved rather than silently corrected.
-- A failed release gate blocks `FINAL.md`.
+- Audit does not edit Markdown.
+- Legal wording changes require a PDF page, exact source quote, approval, repair
+  log, and independent verification.
+- Official-source anomalies remain verbatim and are documented.
+- Broken images, incomplete audits, unresolved high findings, hash mismatches,
+  or unreviewed meaningful visuals block release.
+- Job directories are ignored by Git and remain local.
 
-## MinerU limits used by the plugin
+## Runtime files
 
-The plugin applies the conservative limits documented for the MinerU Precision
-API:
-
-- maximum 200 MB per uploaded file;
-- maximum 200 pages per file;
-- maximum 50 signed upload URLs per request.
-
-Long PDFs are physically split with one-page overlap. Indonesian and other
-Latin-script documents default to `language=latin`.
-
-MinerU API reference: <https://mineru.net/apiManage/docs>
-
-## Install from GitHub with Cursor
-
-This repository is distributed directly from GitHub and is not submitted to the
-Cursor Marketplace. Give Cursor Agent this prompt:
+Each document gets an isolated job directory:
 
 ```text
-Review and install this Cursor Plugin for me:
-https://github.com/LilianaZhu/regulation-to-markdown
-
-Before installation, confirm that no secret is hard-coded. On Windows, clone the
-repository and run install.ps1 with -InstallLocalPlugin. Ask for my approval
-before executing commands. Do not send any PDF to MinerU until I explicitly
-confirm a split plan.
-```
-
-Cursor must ask before cloning or running the installer. A GitHub link is not a
-silent-install mechanism.
-
-## Manual installation on Windows
-
-Requirements:
-
-- Cursor with Plugin, Skill, and MCP support;
-- Python 3.11 or newer available as `python`;
-- internet access;
-- a MinerU Precision API token.
-
-From PowerShell:
-
-```powershell
-git clone https://github.com/LilianaZhu/regulation-to-markdown.git
-Set-Location .\regulation-to-markdown
-powershell -ExecutionPolicy Bypass -File .\install.ps1 -InstallLocalPlugin
-```
-
-Then reload Cursor and open **Customize**. Configure `MINERU_API_TOKEN` for the
-plugin. Never paste the token into chat or commit it to Git.
-
-If the plugin files were copied without running the installer, the first
-`/regulation-to-markdown` run detects whether the Python package is missing.
-With user permission, Agent runs the Skill-local `scripts/bootstrap.py`; reload
-Cursor once afterwards.
-Cursor plugins do not automatically install `requirements.txt`.
-
-### Update
-
-```powershell
-Set-Location .\regulation-to-markdown
-git pull
-powershell -ExecutionPolicy Bypass -File .\install.ps1 -InstallLocalPlugin
-```
-
-Reload Cursor after updating.
-
-### Uninstall
-
-```powershell
-Remove-Item -Recurse -Force "$HOME\.cursor\plugins\local\regulation-to-markdown"
-python -m pip uninstall regulation-to-markdown
-```
-
-For contributors:
-
-```powershell
-.\install.ps1 -Dev -InstallLocalPlugin
-python -m pytest
-```
-
-## Development layout
-
-```text
-.cursor-plugin/plugin.json          Cursor Plugin manifest
-skills/regulation-to-markdown/      Agent workflow and review rules
-commands/regulation-to-markdown.md  Explicit conversion command
-mcp.json                            Local stdio MCP configuration
-src/regulation_to_markdown/         Python implementation
-tests/                              Unit and mocked API tests
-install.ps1                         Windows installer
-```
-
-## MCP tools
-
-- `inspect_pdf_and_propose_splits`
-- `confirm_split_plan`
-- `submit_confirmed_batches_to_mineru`
-- `mineru_batch_status`
-- `wait_for_and_download_mineru`
-- `locate_mineru_output`
-- `render_official_pdf_pages`
-- `update_job_stage`
-- `initialize_ai_audit`
-- `record_ai_review_window`
-- `normalize_mineru_batch`
-- `merge_normalized_batches`
-- `apply_source_verified_repairs`
-- `validate_and_write_report`
-
-The first tool only proposes plans. Submission is technically blocked until
-`confirm_split_plan` is called after user confirmation.
-
-## Job files
-
-Each document gets a dedicated work directory:
-
-```text
-work/<job-id>/
+jobs/<document-id>/
 ├── job.json
 ├── events.jsonl
 ├── batches/
-│   ├── pdf/
-│   ├── mineru-raw/
-│   └── normalized/
-├── findings.jsonl
-├── audit-manifest.json
-├── repairs/
-├── FINAL.md
+├── merged/
+├── audit/
+├── final/
 └── validation-report.md
 ```
 
-Raw files are immutable evidence. Do not place `work/` under version control.
+Only the final Markdown and validation report are exportable release artifacts.
+
+## Development
+
+```powershell
+python -m pip install --upgrade ".[dev]"
+python -m pytest
+python -m ruff check .
+python -m ruff format --check .
+claude plugin validate .
+```
 
 ## Distribution
 
-Share this public repository URL:
+The repository contains a Claude marketplace catalog at:
 
-<https://github.com/LilianaZhu/regulation-to-markdown>
+```text
+.claude-plugin/marketplace.json
+```
 
-Recipients can give the URL to Cursor Agent using the reviewed-install prompt
-above, or clone and run the installer manually. No Marketplace submission is
-required.
+Users can add the GitHub or GitLab repository directly as a marketplace. Claude
+Code supports git marketplace sources and copies installed versions into its
+managed cache.
 
-Official references:
+## Project layout
 
-- <https://cursor.com/docs/plugins>
-- <https://cursor.com/docs/reference/plugins>
-- <https://cursor.com/docs/skills>
-- <https://cursor.com/docs/mcp>
+```text
+plugin.json                         Agent Plugins manifest
+mcp.json                            Agent Plugins MCP definition
+.claude-plugin/plugin.json          Claude Code/Desktop manifest
+.claude-plugin/marketplace.json     Claude marketplace catalog
+.mcp.json                           Claude MCP configuration
+skills/regulation-to-markdown/      Agent workflow and review rules
+scripts/mcp_launcher.py             Persistent isolated Python runtime launcher
+src/regulation_to_markdown/         Deterministic implementation
+tests/                              Unit, security, and integration tests
+```
 
-Release checklist: [docs/GITHUB_RELEASE.md](docs/GITHUB_RELEASE.md)
+## References
 
-## Current scope
-
-This first version provides the local processing engine, MinerU client, MCP
-tools, Agent workflow, source-repair protocol, validation report, and tests.
-
-It intentionally does not run an unattended external AI API. Cursor Agent is
-the AI review layer while the user is in Cursor. The Python package remains
-usable if a replaceable AI adapter is added later.
+- <https://agent-plugins.org/plugin-authors/manifest>
+- <https://agent-plugins.org/plugin-authors/mcp-servers>
+- <https://code.claude.com/docs/en/plugins>
+- <https://code.claude.com/docs/en/discover-plugins>
+- <https://mineru.net/apiManage/docs>

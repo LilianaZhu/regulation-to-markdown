@@ -11,6 +11,8 @@ from .models import (
     FindingStatus,
     ValidationCheck,
     ValidationResult,
+    VisualClassification,
+    VisualDisposition,
 )
 from .pdf import inspect_pdf, sha256_file
 
@@ -57,12 +59,12 @@ def validate_document(
     checks.append(
         ValidationCheck(
             check_id="page-coverage",
-            title="PDF page coverage",
+            title="PDF 页面覆盖",
             status="pass" if covered == expected else "fail",
             detail=(
-                f"Covered all {pdf_info.page_count} pages"
+                f"已覆盖全部 {pdf_info.page_count} 页"
                 if covered == expected
-                else f"Missing pages={missing}; extra pages={extra}"
+                else f"缺失页={missing}；多余页={extra}"
             ),
             blocking=True,
         )
@@ -70,9 +72,9 @@ def validate_document(
     checks.append(
         ValidationCheck(
             check_id="duplicate-pages",
-            title="Duplicate page markers",
+            title="页码标记唯一性",
             status="pass" if duplicate_error is None else "fail",
-            detail=duplicate_error or f"{len(segments)} page markers are unique",
+            detail=duplicate_error or f"{len(segments)} 个页码标记均唯一",
             blocking=True,
         )
     )
@@ -86,12 +88,12 @@ def validate_document(
     checks.append(
         ValidationCheck(
             check_id="image-assets",
-            title="Image assets",
+            title="图片引用完整性",
             status="pass" if not broken_images else "fail",
             detail=(
-                "No broken local image references"
+                "没有损坏的本地图片引用"
                 if not broken_images
-                else f"Missing image assets: {broken_images}"
+                else f"缺失图片文件：{broken_images}"
             ),
             blocking=True,
         )
@@ -106,12 +108,12 @@ def validate_document(
     checks.append(
         ValidationCheck(
             check_id="table-shapes",
-            title="HTML table row shapes",
+            title="HTML 表格结构",
             status="pass" if not malformed_tables else "warning",
             detail=(
-                f"Checked {len(shapes)} tables"
+                f"已检查 {len(shapes)} 个 HTML 表格"
                 if not malformed_tables
-                else f"Inconsistent row widths in tables {malformed_tables}"
+                else f"以下 HTML 表格行宽不一致：{malformed_tables}"
             ),
             blocking=False,
         )
@@ -121,14 +123,16 @@ def validate_document(
     checks.append(
         ValidationCheck(
             check_id="code-fences",
-            title="Code fences",
+            title="代码围栏完整性",
             status="pass" if code_fences % 2 == 0 else "fail",
-            detail=f"Found {code_fences} code-fence lines",
+            detail=f"共发现 {code_fences} 行代码围栏标记，数量为偶数"
+            if code_fences % 2 == 0
+            else f"共发现 {code_fences} 行代码围栏标记，数量为奇数",
             blocking=True,
         )
     )
 
-    audit_detail = "Audit manifest was not supplied"
+    audit_detail = "未提供审计清单"
     audit_passed = False
     if audit_manifest_path:
         try:
@@ -142,9 +146,9 @@ def validate_document(
                 completion["complete"] and source_matches and final_matches
             )
             audit_detail = (
-                "All audit and independent-verification windows are complete"
+                "全部 AI 审校窗口和独立复核窗口均已完成"
                 if audit_passed
-                else "Audit incomplete or file hashes differ: "
+                else "审校未完成或文件哈希不一致："
                 f"{completion}; source_matches={source_matches}; "
                 f"final_matches={final_matches}"
             )
@@ -153,7 +157,7 @@ def validate_document(
     checks.append(
         ValidationCheck(
             check_id="ai-audit-completion",
-            title="AI audit and independent verification",
+            title="AI 审校与独立复核",
             status="pass" if audit_passed else "fail",
             detail=audit_detail,
             blocking=True,
@@ -161,6 +165,71 @@ def validate_document(
     )
 
     findings = load_findings(findings_path) if findings_path else []
+    visual_categories = {
+        "broken_image",
+        "meaningful_visual",
+        "non_substantive_visual",
+    }
+    visual_findings = [
+        finding
+        for finding in findings
+        if finding.visual_classification is not None
+        or finding.category in visual_categories
+    ]
+    invalid_visuals = []
+    meaningful_pending_review = []
+    omitted_non_substantive = []
+    for finding in visual_findings:
+        if finding.visual_classification is None:
+            invalid_visuals.append(finding)
+            continue
+        if finding.visual_classification == VisualClassification.MEANINGFUL:
+            if (
+                finding.visual_disposition != VisualDisposition.DESCRIBED
+                or not finding.visual_description
+                or not finding.human_review_required
+            ):
+                invalid_visuals.append(finding)
+            elif not finding.human_reviewed:
+                meaningful_pending_review.append(finding)
+        elif finding.visual_classification == VisualClassification.NON_SUBSTANTIVE:
+            if (
+                finding.visual_disposition
+                not in {VisualDisposition.OMITTED, VisualDisposition.PRESERVED}
+                or not finding.visual_description
+            ):
+                invalid_visuals.append(finding)
+            elif finding.visual_disposition == VisualDisposition.OMITTED:
+                omitted_non_substantive.append(finding)
+
+    if invalid_visuals:
+        visual_status = "fail"
+        visual_detail = "图片分类或处理记录不完整：" + ", ".join(
+            f"{item.finding_id}（PDF 第 {item.pdf_page} 页）"
+            for item in invalid_visuals
+        )
+    elif meaningful_pending_review:
+        visual_status = "warning"
+        visual_detail = "以下条文相关图片已转成文字描述，仍需人工复核：" + ", ".join(
+            f"{item.finding_id}（PDF 第 {item.pdf_page} 页）"
+            for item in meaningful_pending_review
+        )
+    else:
+        visual_status = "pass"
+        visual_detail = (
+            f"图片处理记录完整；已省略 {len(omitted_non_substantive)} 项"
+            "与条文无直接关系的低信息图片"
+        )
+    checks.append(
+        ValidationCheck(
+            check_id="visual-content",
+            title="图片语义分类与处理",
+            status=visual_status,
+            detail=visual_detail,
+            blocking=True,
+        )
+    )
+
     unresolved = [
         finding
         for finding in findings
@@ -176,12 +245,12 @@ def validate_document(
     checks.append(
         ValidationCheck(
             check_id="high-findings",
-            title="Unresolved high-severity findings",
+            title="高风险问题清零",
             status="pass" if not unresolved else "fail",
             detail=(
-                "No unresolved high-severity findings"
+                "没有未解决的高风险或严重问题"
                 if not unresolved
-                else ", ".join(item.finding_id for item in unresolved)
+                else "未解决问题：" + ", ".join(item.finding_id for item in unresolved)
             ),
             blocking=True,
         )
@@ -189,12 +258,13 @@ def validate_document(
     checks.append(
         ValidationCheck(
             check_id="repair-evidence",
-            title="Source evidence for applied repairs",
+            title="修复原文证据",
             status="pass" if not unverified_applied else "fail",
             detail=(
-                "All applied repairs are source-verified"
+                "所有已应用修复均有官方原文证据"
                 if not unverified_applied
-                else ", ".join(item.finding_id for item in unverified_applied)
+                else "缺少原文证据："
+                + ", ".join(item.finding_id for item in unverified_applied)
             ),
             blocking=True,
         )
@@ -215,7 +285,7 @@ def validate_document(
         unresolved_high_findings=len(unresolved),
         checks=checks,
         notes=[
-            "Structural validation does not replace independent AI/PDF visual review.",
-            "Official-source anomalies should remain verbatim and be documented.",
+            "结构校验不能替代 AI 对官方 PDF 的逐页视觉复核。",
+            "官方原文本身的异常应保持原样并单独记录。",
         ],
     )

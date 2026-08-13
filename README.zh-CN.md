@@ -1,143 +1,134 @@
-# 法规转 Markdown Cursor 插件
+# 法规转 Markdown Agent Plugin
 
-本插件将官方法规 PDF 转成经过官方原文核验的 Markdown。
+本工具将官方法规 PDF 转成经过官方原文核验的 Markdown。
 
 核心原则：
 
-- 官方 PDF 是唯一依据；
-- MinerU 只负责提取，不被视为权威原文；
-- Python只做分页、合并、格式整理和验证；
-- 法律文字只有在核对具体 PDF 页后才能修改；
-- 官方原文本身存在的错字或不一致保持原样并记录。
+- 官方 PDF 是唯一权威来源；
+- MinerU 只负责提取；
+- Python只执行确定性处理和验证；
+- AI逐页对照官方PDF；
+- 任何法律文字修改都必须有页码、原文、批准、修复日志和独立复核；
+- 未通过发布门禁的文件不能标记为FINAL。
 
-## 团队成员如何使用
+## 插件形态
 
-1. 将官方 PDF 放入 Cursor 工作区。
-2. 在 Agent 中输入：
-
-   ```text
-   /regulation-to-markdown @法规文件.pdf
-   ```
-
-3. Cursor 会显示两种分页方案：
-   - 高可靠：较小批次，适合严格逐页审查；
-   - 低成本：较大批次，减少 MinerU 任务数。
-4. 选择方案后才会调用 MinerU。
-5. 遇到法律文字修复时，Cursor 会显示 PDF 页码、官方原文和建议修改。
-6. 完成后获得：
-   - `法规名称_FINAL.md`
-   - `validation-report.md`
-
-法规知识库只导入 `FINAL.md`；验证报告作为内部校对记录保存。
-
-## 通过 GitHub 链接让 Cursor 辅助安装
-
-本项目直接通过 GitHub 分享，不提交 Cursor Marketplace。把下面的提示词发给
-Cursor Agent：
+仓库同时提供：
 
 ```text
-请审查并安装这个 Cursor 插件：
-https://github.com/LilianaZhu/regulation-to-markdown
-
-安装前确认仓库没有硬编码密钥。Windows 下克隆仓库并执行 install.ps1
--InstallLocalPlugin；执行命令前先征得我的同意。在我明确确认分页方案之前，
-不要向 MinerU 发送任何 PDF。
+plugin.json                     Agent Plugins 1.0.0标准
+.claude-plugin/plugin.json      Claude Code/Desktop插件清单
+.claude-plugin/marketplace.json Claude插件市场目录
+mcp.json                        Agent Plugins MCP配置
+.mcp.json                       Claude MCP配置
 ```
 
-GitHub 链接不是静默安装链接；Cursor 应在克隆和执行安装脚本前请求批准。
+仓库本身是唯一可编辑源码包。Claude安装后的cache和插件数据目录由系统管理，
+不应手工修改。
 
-## 第一次手动安装
+## 在Claude Code或Claude Desktop安装
 
-要求：
-
-- Windows 版 Cursor；
-- Python 3.11或更高版本，并可通过 `python` 命令运行；
-- 可以访问互联网；
-- MinerU精准解析 API Token。
-
-从 PowerShell 运行：
-
-```powershell
-git clone https://github.com/LilianaZhu/regulation-to-markdown.git
-Set-Location .\regulation-to-markdown
-powershell -ExecutionPolicy Bypass -File .\install.ps1 -InstallLocalPlugin
-```
-
-然后：
-
-1. 重新加载 Cursor；
-2. 打开 Cursor 的 **Customize**；
-3. 为插件配置 `MINERU_API_TOKEN`；
-4. 不要把 Token 粘贴到聊天、代码或 Git 中。
-
-如果只复制了插件文件而没有运行安装脚本，第一次运行命令时，Agent会申请执行
-本地 `bootstrap.py`。同意后重新加载 Cursor 一次即可。
-
-### 更新
-
-```powershell
-Set-Location .\regulation-to-markdown
-git pull
-powershell -ExecutionPolicy Bypass -File .\install.ps1 -InstallLocalPlugin
-```
-
-更新后重新加载 Cursor。
-
-### 卸载
-
-```powershell
-Remove-Item -Recurse -Force "$HOME\.cursor\plugins\local\regulation-to-markdown"
-python -m pip uninstall regulation-to-markdown
-```
-
-## 插件自动完成什么
-
-- 检查 PDF 页数、大小、文件哈希和文本层；
-- 根据 MinerU 的200页、200MB限制建议分页；
-- 物理切分长 PDF，并保留1页重叠；
-- 上传官方 MinerU API并下载 Markdown和JSON；
-- 生成官方页码锚点；
-- 展开 HTML 表格；
-- 验证重叠页完全相同后去重合并；
-- 分批让 Cursor AI对照官方 PDF审查；
-- 只应用已批准且有 PDF证据的修复；
-- 检查页面覆盖、重复页、图片、表格和未解决高风险问题；
-- 生成人机均可读取的 Markdown 验证报告。
-
-## 哪些情况必须人工确认
-
-- PDF文字层与页面视觉内容不一致；
-- 图表需要转成文字；
-- 官方原文本身疑似有错；
-- AI置信度不足；
-- 重叠页不一致；
-- 高风险问题未解决。
-
-系统不会根据语言常识猜测法律文字。
-
-## 失败后如何继续
-
-每个任务会保存：
+在Claude中执行：
 
 ```text
-work/<任务编号>/
+/plugin marketplace add https://github.com/LilianaZhu/regulation-to-markdown
+/plugin install regulation-to-markdown@liliana-legal-tools
+/reload-plugins
+```
+
+启用插件时，填写MinerU API Token：
+
+<https://mineru.net/apiManage/token>
+
+该字段标记为敏感信息，由Claude凭据机制保存。不要把Token发到聊天、写入Git、
+任务目录或验证报告。
+
+## 使用
+
+```text
+/regulation-to-markdown:regulation-to-markdown @法规文件.pdf
+```
+
+插件会：
+
+1. 检查PDF页数、大小、哈希和文本层；
+2. 提供高可靠/低成本分页方案；
+3. 等待用户确认后才上传MinerU；
+4. 保存MinerU原始结果；
+5. 确定性规范化、页码映射和重叠去重；
+6. 分批核对官方PDF文本和页面图像；
+7. 展示需要批准的原文修复；
+8. 独立复核最终文件；
+9. 通过门禁后导出FINAL.md和validation-report.md。
+
+本工具不写死印尼BAB/Pasal结构，会识别不同法域和不同文件类型的自身层级。
+
+## 其他Agent Plugin客户端
+
+支持Agent Plugins 1.0.0的客户端读取根目录：
+
+```text
+plugin.json
+mcp.json
+```
+
+由于开放标准暂未定义通用凭据存储，其他客户端需在宿主环境中配置：
+
+```text
+MINERU_API_TOKEN
+```
+
+## 本地开发
+
+```powershell
+claude --plugin-dir C:\path\to\regulation-to-markdown
+```
+
+或：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Dev -InstallClaudePlugin
+```
+
+质量检查：
+
+```powershell
+python -m pytest
+python -m ruff check .
+python -m ruff format --check .
+claude plugin validate .
+```
+
+## 任务文件
+
+```text
+jobs/<文件ID>/
 ├─ job.json
 ├─ events.jsonl
 ├─ batches/
-├─ findings.jsonl
-├─ audit-manifest.json
-├─ repairs/
-├─ FINAL.md
+├─ merged/
+├─ audit/
+├─ final/
 └─ validation-report.md
 ```
 
-MinerU任务ID和当前状态都记录在 `job.json`，失败后可以继续查询，不必从头开始。
+`jobs/`仅保留在本地并由Git忽略，不会发布到插件仓库。
 
-## 分享
+## 更新
 
-直接分享公开仓库：
+如果通过Marketplace安装：
 
-<https://github.com/LilianaZhu/regulation-to-markdown>
+```text
+/plugin marketplace update liliana-legal-tools
+/plugin update regulation-to-markdown@liliana-legal-tools
+/reload-plugins
+```
 
-接收者可以把链接和上面的安装提示词交给 Cursor Agent，也可以手动克隆并运行
-安装脚本，无需 Cursor Marketplace。
+请勿手工修改Claude插件cache。
+
+## 官方文档
+
+- <https://agent-plugins.org/plugin-authors/manifest>
+- <https://agent-plugins.org/plugin-authors/mcp-servers>
+- <https://code.claude.com/docs/en/plugins>
+- <https://code.claude.com/docs/en/discover-plugins>

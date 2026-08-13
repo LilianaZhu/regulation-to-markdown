@@ -8,8 +8,9 @@ Security fixes are applied to the latest release on the `main` branch.
 
 - Never commit MinerU tokens, `.env` files, official PDFs, split PDFs, signed
   download URLs, MinerU ZIPs, findings, repair evidence, or job state.
-- Configure `MINERU_API_TOKEN` through Cursor plugin variables.
-- Keep each document's `work/` directory local and access-controlled.
+- In Claude Code, configure the sensitive `mineru_api_token` plugin option. In
+  other Agent Plugin clients, set `MINERU_API_TOKEN` in the host environment.
+- Keep each document's `jobs/` or `work/` directory local and access-controlled.
 - Review the repository before approving installation or MCP execution.
 
 The local MCP can read the selected source PDF and can write only within the

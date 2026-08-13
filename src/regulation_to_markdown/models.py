@@ -107,6 +107,17 @@ class FindingStatus(StrEnum):
     NEEDS_REVIEW = "needs_review"
 
 
+class VisualClassification(StrEnum):
+    MEANINGFUL = "meaningful"
+    NON_SUBSTANTIVE = "non_substantive"
+
+
+class VisualDisposition(StrEnum):
+    DESCRIBED = "described"
+    OMITTED = "omitted"
+    PRESERVED = "preserved"
+
+
 class ReviewWindowStatus(StrEnum):
     PENDING = "pending"
     COMPLETED = "completed"
@@ -152,6 +163,11 @@ class Finding(BaseModel):
     confidence: float = Field(ge=0, le=1)
     source_verified: bool = False
     reviewer_notes: str | None = None
+    visual_classification: VisualClassification | None = None
+    visual_disposition: VisualDisposition | None = None
+    visual_description: str | None = None
+    human_review_required: bool = False
+    human_reviewed: bool = False
 
 
 class ValidationCheck(BaseModel):

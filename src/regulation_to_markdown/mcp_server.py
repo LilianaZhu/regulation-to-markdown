@@ -6,8 +6,16 @@ from uuid import uuid4
 
 from mcp.server import MCPServer
 
-from .audit import initialize_audit_manifest, record_audit_window
-from .findings import apply_approved_repairs
+from .audit import (
+    initialize_audit_manifest,
+    load_audit_manifest,
+    record_audit_window,
+)
+from .export import export_final_artifacts as export_artifacts
+from .findings import (
+    apply_approved_repairs,
+    synchronize_findings_with_verified_output,
+)
 from .merge import merge_batches
 from .mineru import MinerUClient
 from .models import (
@@ -415,7 +423,7 @@ def validate_and_write_report(
     findings_path: str | None = None,
     audit_manifest_path: str | None = None,
 ) -> dict[str, Any]:
-    """Run release gates and write the human/machine-readable Markdown report."""
+    """Synchronize final findings, run release gates, and write the report."""
     safe_markdown = within_work_dir(markdown_path, work_dir, label="final Markdown")
     safe_report = within_work_dir(report_path, work_dir, label="validation report")
     safe_findings = (
@@ -428,13 +436,34 @@ def validate_and_write_report(
         if audit_manifest_path
         else None
     )
+    finding_sync = None
+    if safe_findings and safe_manifest:
+        manifest = load_audit_manifest(safe_manifest)
+        within_work_dir(
+            manifest.markdown_path,
+            work_dir,
+            label="audited pre-repair Markdown",
+        )
+        repair_log = safe_markdown.with_suffix(safe_markdown.suffix + ".repairs.jsonl")
+        within_work_dir(repair_log, work_dir, label="repair log")
+        finding_sync = synchronize_findings_with_verified_output(
+            safe_markdown,
+            safe_findings,
+            safe_manifest,
+            repair_log,
+        )
     result = validate_document(
         safe_markdown,
         source_pdf_path,
         safe_findings,
         safe_manifest,
     )
-    written = write_validation_report(result, safe_report, safe_findings)
+    written = write_validation_report(
+        result,
+        safe_report,
+        safe_findings,
+        safe_manifest,
+    )
     store = JobStore(work_dir)
     if result.status == "passed":
         store.transition(JobState.VALIDATED)
@@ -443,10 +472,29 @@ def validate_and_write_report(
     else:
         store.transition(JobState.FAILED, error="Release validation failed")
     return {
+        "finding_sync": finding_sync,
         "validation": result.model_dump(mode="json"),
         "report_path": written,
         "release_allowed": result.status == "passed",
     }
+
+
+@mcp.tool()
+def export_final_artifacts(
+    final_markdown_path: str,
+    report_path: str,
+    destination_dir: str,
+    work_dir: str,
+    overwrite: bool = False,
+) -> dict[str, object]:
+    """Export approved final deliverables to the user's selected directory."""
+    return export_artifacts(
+        final_markdown_path,
+        report_path,
+        destination_dir,
+        work_dir,
+        overwrite=overwrite,
+    )
 
 
 def main() -> None:

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "regulation-to-markdown",
+  "displayName": "Regulation to Markdown",
+  "version": "0.2.0",
+  "description": "Convert official regulation PDFs to source-grounded Markdown with MinerU extraction, deterministic processing, AI review, and release validation.",
+  "author": {
+    "name": "LilianaZhu",
+    "url": "https://github.com/LilianaZhu"
+  },
+  "homepage": "https://github.com/LilianaZhu/regulation-to-markdown",
+  "repository": "https://github.com/LilianaZhu/regulation-to-markdown",
+  "license": "MIT",
+  "keywords": [
+    "pdf",
+    "markdown",
+    "mineru",
+    "regulation",
+    "legal",
+    "compliance"
+  ],
+  "userConfig": {
+    "mineru_api_token": {
+      "type": "string",
+      "title": "MinerU API Token",
+      "description": "Create a token at https://mineru.net/apiManage/token. The value is stored securely and never written to plugin files or reports.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

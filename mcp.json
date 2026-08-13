@@ -1,16 +1,18 @@
 {
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
     "regulation-to-markdown": {
       "type": "stdio",
       "command": "python",
       "args": [
-        "-m",
-        "regulation_to_markdown.mcp_server"
+        "${PLUGIN_ROOT}/scripts/mcp_launcher.py"
       ],
       "env": {
-        "MINERU_API_TOKEN": "${MINERU_API_TOKEN}",
+        "REG2MD_PLUGIN_ROOT": "${PLUGIN_ROOT}",
+        "REG2MD_PLUGIN_DATA": "${PLUGIN_DATA}",
         "PYTHONUTF8": "1"
-      }
+      },
+      "cwd": "${PLUGIN_ROOT}"
     }
   }
 }

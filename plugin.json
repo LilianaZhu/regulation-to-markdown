@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "regulation-to-markdown",
+  "version": "0.2.0",
+  "description": "Convert official regulation PDFs to source-grounded Markdown with MinerU extraction, deterministic processing, AI review, and release validation.",
+  "author": {
+    "name": "LilianaZhu",
+    "url": "https://github.com/LilianaZhu"
+  },
+  "homepage": "https://github.com/LilianaZhu/regulation-to-markdown",
+  "repository": "https://github.com/LilianaZhu/regulation-to-markdown",
+  "license": "MIT",
+  "keywords": [
+    "pdf",
+    "markdown",
+    "mineru",
+    "regulation",
+    "legal",
+    "compliance"
+  ]
+}

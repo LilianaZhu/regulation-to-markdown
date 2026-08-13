@@ -39,7 +39,8 @@ class MinerUClient:
         self._token = token or os.environ.get("MINERU_API_TOKEN", "")
         if not self._token:
             raise MinerUError(
-                "MINERU_API_TOKEN is required. Configure it in Cursor plugin variables."
+                "MINERU_API_TOKEN is required. Configure the plugin's MinerU API "
+                "Token option or set the environment variable."
             )
         self.base_url = base_url.rstrip("/")
         self.max_retries = max_retries

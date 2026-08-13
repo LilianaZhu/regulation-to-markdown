@@ -15,8 +15,12 @@ repairing source text.
 
 If the `regulation-to-markdown` MCP tools are unavailable:
 
-1. Ask permission to run `python scripts/bootstrap.py` from this Skill.
-2. Tell the user to reload Cursor after installation.
+1. In Claude Code, ask permission to run the bundled MCP launcher with
+   `--install-only`, `--plugin-root "${CLAUDE_PLUGIN_ROOT}"`, and
+   `--data-dir "${CLAUDE_PLUGIN_DATA}"`. In another Agent Plugin client,
+   resolve this Skill's bundled
+   `scripts/bootstrap.py` to an absolute path and ask permission to run it.
+2. Tell the user to reload plugins or restart the agent client after installation.
 3. Stop the document workflow until the MCP server is available.
 
 Do not install dependencies silently.
@@ -34,6 +38,10 @@ Do not install dependencies silently.
    Only `FINAL.md` goes into the regulation knowledge-base slot.
 6. A failed release gate blocks completion. Report the blocker; do not call an
    incomplete file final.
+7. Classify every reviewed PDF image by its relationship to the regulation:
+   meaningful images must be described in text and sent to human review;
+   non-substantive, low-information images may be omitted but must be disclosed
+   in the validation report.
 
 ## Workflow
 
@@ -50,7 +58,7 @@ Present both returned plans with:
 - estimated sizes;
 - whether OCR is likely required.
 
-Use Cursor's question UI to ask the user to choose Reliable or Economical.
+Use the client interaction tool to ask the user to choose Reliable or Economical.
 Do not choose for the user and do not call MinerU yet.
 
 ### 2. Confirm and extract
@@ -118,6 +126,20 @@ Audit the merged Markdown against the official PDF in source order.
   the job `work_dir`, for layout-sensitive evidence such as tables, diagrams,
   signatures, columns, and disputed OCR.
 - The audit pass must not edit Markdown.
+- Classify visual content as:
+  - `meaningful`: diagrams, material illustrations, flow charts, or images that
+    explain or qualify provisions. Create a `meaningful_visual` finding, write a
+    source-verified text description, set `visual_disposition: described`,
+    `human_review_required: true`, and keep `human_reviewed: false` until a human
+    confirms it.
+  - `non_substantive`: logos, coats of arms, electronic-signature verification
+    QR codes or URLs, handwritten signatures, seals, and similar images with
+    little information directly relevant to the provisions. They may be omitted.
+    Create a verified `non_substantive_visual` record with
+    `visual_disposition: omitted` and state exactly what was omitted. This is
+    report information, not a warning.
+- Never replace a meaningful image with a generic note that merely says an image
+  existed.
 
 Write one JSON object per line to `findings.jsonl`. Each finding must match the
 schema in the review rules and include an exact PDF page.
@@ -142,11 +164,21 @@ Call `apply_source_verified_repairs` only after approval, passing the job
 `work_dir`. The tool requires an exact, unique Markdown anchor and writes a
 repair audit log.
 
-For diagrams when the final deliverable must be one Markdown file:
+For meaningful images when the final deliverable must be one Markdown file:
 
 - transcribe only visually verified labels, values, arrows, and relationships;
 - label the block in English as not additional normative text;
 - preserve any discrepancy between the diagram and surrounding source prose.
+- include the resulting description in the validation report;
+- set the validation outcome to `needs_review` until a human confirms the
+  description, even when the AI audit and source verification succeeded.
+
+For non-substantive images:
+
+- omission does not require repair approval and must not create a warning;
+- record the PDF page and omitted image type in the validation report;
+- remove any broken local reference rather than substituting a description that
+  could be mistaken for regulatory content.
 
 ### 7. Independent verify
 
@@ -168,12 +200,21 @@ with stage `verify`, the final Markdown path, and status `completed` or
 ### 8. Validate and release
 
 Call `validate_and_write_report` with the audit manifest and job `work_dir`.
+Before validation, the tool automatically reconciles the repair log with the
+audited pre-repair Markdown and the independently verified final Markdown. It
+marks a repaired finding `verified` only when replaying every recorded repair
+produces the exact final file and all verification windows reference that same
+file hash. Never mark findings verified from the presence of a repair log alone.
 
 Release only when:
 
 - every official page is covered exactly once;
 - page markers are unique;
 - no local image reference is broken;
+- every reviewed image has a semantic classification and disposition;
+- every meaningful image has a source-verified text description;
+- every meaningful image description has been human-reviewed before release;
+- omitted non-substantive images are listed in the validation report;
 - every table-shape warning has been source-reviewed and resolved; a warning
   returns `needs_review` and blocks release even though it is not a hard failure;
 - no unresolved high/critical finding exists;
@@ -184,11 +225,33 @@ Deliver:
 - `<document>_FINAL.md`;
 - `validation-report.md`.
 
-The validation report is a Markdown document with YAML frontmatter. Humans read
-the body; programs read the frontmatter.
+The validation report is a concise Chinese operator report with schema-v2 YAML
+frontmatter. Expand only warnings, failures, and unresolved findings. Summarize
+verified findings by severity, category, and PDF page; keep full evidence in
+`findings.jsonl`, the repair log, and the audit manifest.
+The report's actionable issue list must describe the final Markdown, not defects
+that were already repaired and independently verified.
 
 After validation, call `update_job_stage` with:
 
 - `completed` when every release gate passes;
 - `needs_human_review` when source evidence is ambiguous;
 - `failed` with a short error when a blocking gate fails.
+
+### 9. Choose destination and export
+
+Only after validation passes, use the client interaction tool to ask where to export
+the final deliverables. Offer:
+
+- the official PDF's directory (recommended);
+- `<workspace>/exports/<document-name>`;
+- the built-in `Other` response for a custom absolute directory path.
+
+Show the resolved destination before calling `export_final_artifacts`. Export
+only `<document>_FINAL.md` and `validation-report.md`; all raw and audit
+artifacts remain in the job `work_dir`. Use `overwrite: false` by default. If a
+different same-name file already exists, ask for explicit overwrite approval
+before retrying with `overwrite: true`.
+
+End with both exact exported paths so the client renders them as openable file
+links. If validation does not pass, do not export a file labeled as final.

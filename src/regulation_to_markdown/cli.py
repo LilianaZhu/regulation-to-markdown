@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .export import export_final_artifacts
+from .findings import synchronize_findings_with_verified_output
 from .merge import merge_batches
 from .models import PageBatch
 from .normalize import normalize_batch
@@ -58,6 +60,13 @@ def build_parser() -> argparse.ArgumentParser:
     validate_command.add_argument("report")
     validate_command.add_argument("--findings")
     validate_command.add_argument("--audit-manifest")
+
+    export_command = commands.add_parser("export")
+    export_command.add_argument("final_markdown")
+    export_command.add_argument("report")
+    export_command.add_argument("destination_dir")
+    export_command.add_argument("work_dir")
+    export_command.add_argument("--overwrite", action="store_true")
     return parser
 
 
@@ -101,19 +110,42 @@ def main() -> None:
             )
         )
     elif args.command == "validate":
+        finding_sync = None
+        if args.findings and args.audit_manifest:
+            finding_sync = synchronize_findings_with_verified_output(
+                args.markdown,
+                args.findings,
+                args.audit_manifest,
+            )
         result = validate_document(
             args.markdown,
             args.source_pdf,
             args.findings,
             args.audit_manifest,
         )
-        report_path = write_validation_report(result, args.report, args.findings)
+        report_path = write_validation_report(
+            result,
+            args.report,
+            args.findings,
+            args.audit_manifest,
+        )
         _print(
             {
+                "finding_sync": finding_sync,
                 "status": result.status,
                 "report_path": report_path,
                 "release_allowed": result.status == "passed",
             }
+        )
+    elif args.command == "export":
+        _print(
+            export_final_artifacts(
+                args.final_markdown,
+                args.report,
+                args.destination_dir,
+                args.work_dir,
+                overwrite=args.overwrite,
+            )
         )
 
 

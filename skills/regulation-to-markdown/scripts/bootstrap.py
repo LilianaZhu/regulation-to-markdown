@@ -11,24 +11,22 @@ def main() -> int:
         return 1
 
     plugin_root = Path(__file__).resolve().parents[3]
-    pyproject = plugin_root / "pyproject.toml"
-    if not pyproject.is_file():
-        print(f"Cannot find plugin pyproject.toml at {plugin_root}", file=sys.stderr)
+    launcher = plugin_root / "scripts" / "mcp_launcher.py"
+    if not launcher.is_file():
+        print(f"Cannot find MCP launcher at {launcher}", file=sys.stderr)
         return 1
 
     command = [
         sys.executable,
-        "-m",
-        "pip",
-        "install",
-        "--user",
-        "--upgrade",
+        str(launcher),
+        "--install-only",
+        "--plugin-root",
         str(plugin_root),
     ]
     completed = subprocess.run(command, check=False)
     if completed.returncode == 0:
-        print("Regulation to Markdown Python package installed.")
-        print("Reload Cursor to start the local MCP server.")
+        print("Regulation to Markdown Python runtime installed.")
+        print("Reload the plugin or restart your agent client.")
     return completed.returncode
 
 

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "liliana-legal-tools",
+  "description": "Legal document conversion and source-verification plugins.",
+  "owner": {
+    "name": "LilianaZhu",
+    "url": "https://github.com/LilianaZhu"
+  },
+  "plugins": [
+    {
+      "name": "regulation-to-markdown",
+      "source": "./",
+      "description": "Convert official regulation PDFs to verified Markdown.",
+      "version": "0.2.0"
+    }
+  ]
+}

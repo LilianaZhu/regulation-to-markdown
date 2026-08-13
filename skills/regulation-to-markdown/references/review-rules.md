@@ -47,7 +47,12 @@ One JSON object per line:
   "rationale": "What differs and why it matters",
   "confidence": 0.99,
   "source_verified": false,
-  "reviewer_notes": null
+  "reviewer_notes": null,
+  "visual_classification": null,
+  "visual_disposition": null,
+  "visual_description": null,
+  "human_review_required": false,
+  "human_reviewed": false
 }
 ```
 
@@ -75,6 +80,43 @@ Across each review window:
    sub-items.
 4. Check image references. If assets are absent, create a finding rather than a
    guessed transcription.
+
+## Visual-content policy
+
+Every reviewed image must be classified by its relationship to the regulation.
+
+### Meaningful images
+
+Examples include diagrams, flow charts, material illustrations, and images that
+explain, qualify, or are needed to understand provisions.
+
+- Set `category: meaningful_visual`.
+- Set `visual_classification: meaningful` and
+  `visual_disposition: described`.
+- Transcribe only visually verified labels, values, arrows, and relationships.
+- Put the description into `visual_description` and the final Markdown, clearly
+  labelled in English as not additional normative text.
+- Set `human_review_required: true` and `human_reviewed: false`.
+- The validation report must show a warning and the document status must be
+  `needs_review` until a human confirms the description.
+- A generic statement that an image exists is not an adequate description.
+
+### Non-substantive, low-information images
+
+Examples include logos, coats of arms, electronic-signature verification QR
+codes or URLs, handwritten signatures, seals, and similar images with little
+information directly relevant to the provisions.
+
+- They may be omitted from final Markdown.
+- Set `category: non_substantive_visual`,
+  `visual_classification: non_substantive`, and
+  `visual_disposition: omitted`.
+- Use `visual_description` to state exactly what was omitted and its PDF page.
+- Mark the record verified after visual confirmation.
+- The validation report must disclose the omission as information only. It must
+  not create a warning or require human review.
+
+An unclassified image finding is a release-blocking error.
 
 ## Repair rules
 
@@ -106,5 +148,6 @@ show both forms to the user.
 - High: missing substantive paragraph, table row, definition, deadline, or
   source-unverified wording change.
 - Medium: missing structural label, page-boundary error, flattened list, or
-  broken image that affects retrieval.
+  a meaningful image that is missing or inadequately described.
 - Low: harmless whitespace, source-code formatting, or a cosmetic inconsistency.
+- Omitted non-substantive images are informational records, not defects.

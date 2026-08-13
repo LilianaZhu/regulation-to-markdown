@@ -9,18 +9,37 @@ from regulation_to_markdown.mcp_server import mcp
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_cursor_plugin_manifest_and_skill():
-    manifest = json.loads(
-        (PROJECT_ROOT / ".cursor-plugin" / "plugin.json").read_text(encoding="utf-8")
+def test_agent_and_claude_plugin_manifests_and_skill():
+    agent_manifest = json.loads(
+        (PROJECT_ROOT / "plugin.json").read_text(encoding="utf-8")
     )
+    claude_manifest = json.loads(
+        (PROJECT_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )
+    marketplace = json.loads(
+        (PROJECT_ROOT / ".claude-plugin" / "marketplace.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    agent_mcp = json.loads((PROJECT_ROOT / "mcp.json").read_text(encoding="utf-8"))
+    claude_mcp = json.loads((PROJECT_ROOT / ".mcp.json").read_text(encoding="utf-8"))
     skill = (PROJECT_ROOT / "skills" / "regulation-to-markdown" / "SKILL.md").read_text(
         encoding="utf-8"
     )
 
-    assert manifest["name"] == "regulation-to-markdown"
-    assert manifest["repository"].endswith("/LilianaZhu/regulation-to-markdown")
-    assert manifest["logo"] == "assets/logo.svg"
-    assert "MINERU_API_TOKEN" in manifest["variables"]["properties"]
+    assert agent_manifest["$schema"].endswith("/1.0.0/plugin.schema.json")
+    assert agent_manifest["name"] == "regulation-to-markdown"
+    assert claude_manifest["name"] == "regulation-to-markdown"
+    assert claude_manifest["version"] == agent_manifest["version"] == "0.2.0"
+    assert claude_manifest["userConfig"]["mineru_api_token"]["sensitive"] is True
+    assert marketplace["plugins"][0]["source"] == "./"
+    assert agent_mcp["$schema"].endswith("/1.0.0/mcp.schema.json")
+    assert "${PLUGIN_ROOT}" in json.dumps(agent_mcp)
+    assert "${CLAUDE_PLUGIN_ROOT}" in json.dumps(claude_mcp)
+    assert "${user_config.mineru_api_token}" in json.dumps(claude_mcp)
+    assert (PROJECT_ROOT / "scripts" / "mcp_launcher.py").is_file()
+    assert not (PROJECT_ROOT / ".cursor-plugin" / "plugin.json").exists()
+    assert not (PROJECT_ROOT / "commands" / "regulation-to-markdown.md").exists()
     assert skill.startswith("---\nname: regulation-to-markdown\n")
     assert "official PDF is the only authority" in skill
     assert skill.index("### 4. Merge normalized batches") < skill.index(
@@ -28,12 +47,13 @@ def test_cursor_plugin_manifest_and_skill():
     )
 
 
-def test_local_installer_uses_file_allowlist():
+def test_installer_targets_claude_plugin_workflow():
     installer = (PROJECT_ROOT / "install.ps1").read_text(encoding="utf-8")
 
-    assert "$DirectoryExtensions" in installer
-    assert "Get-ChildItem -Recurse -File $SourceRoot" in installer
-    assert "Copy-Item -Recurse" not in installer
+    assert "InstallClaudePlugin" in installer
+    assert "claude plugin marketplace add" in installer
+    assert "claude plugin install" in installer
+    assert ".cursor\\plugins\\local" not in installer
 
 
 def test_mcp_exposes_expected_tools():
@@ -55,6 +75,7 @@ def test_mcp_exposes_expected_tools():
         "merge_normalized_batches",
         "apply_source_verified_repairs",
         "validate_and_write_report",
+        "export_final_artifacts",
     } <= names
 
 

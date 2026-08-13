@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "regulation-to-markdown": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/mcp_launcher.py"
+      ],
+      "env": {
+        "REG2MD_PLUGIN_ROOT": "${CLAUDE_PLUGIN_ROOT}",
+        "REG2MD_PLUGIN_DATA": "${CLAUDE_PLUGIN_DATA}",
+        "MINERU_API_TOKEN": "${user_config.mineru_api_token}",
+        "PYTHONUTF8": "1"
+      }
+    }
+  }
+}
