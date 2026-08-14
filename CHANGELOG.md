@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.1 - 2026-08-14
+
+- Make the GitHub marketplace installation path explicit for Claude Code CLI.
+- Improve the built-in secure MinerU Token configuration prompt.
+- Repair CI manifest validation after removal of the legacy Cursor manifest.
+
 ## 0.2.0 - 2026-08-13
 
 - Migrate the package from Cursor-specific Plugin metadata to the portable Agent

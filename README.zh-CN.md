@@ -26,28 +26,51 @@ mcp.json                        Agent Plugins MCP配置
 仓库本身是唯一可编辑源码包。Claude安装后的cache和插件数据目录由系统管理，
 不应手工修改。
 
-## 在Claude Code或Claude Desktop安装
+## 在Claude Code CLI安装
 
-在Claude中执行：
+要求：
+
+- Claude Code 2.1.207或以上；
+- Python 3.11或以上，并且可通过`python`命令启动；
+- 能访问GitHub、PyPI、MinerU及MinerU签名上传/下载域名。
+
+在Claude Code交互会话中执行：
 
 ```text
-/plugin marketplace add https://github.com/LilianaZhu/regulation-to-markdown
+/plugin marketplace add LilianaZhu/regulation-to-markdown
 /plugin install regulation-to-markdown@liliana-legal-tools
 /reload-plugins
 ```
 
-启用插件时，填写MinerU API Token：
+安装或启用插件时，Claude Code会打开配置界面。粘贴在以下页面创建的
+MinerU API Token：
 
 <https://mineru.net/apiManage/token>
 
-该字段标记为敏感信息，由Claude凭据机制保存。不要把Token发到聊天、写入Git、
-任务目录或验证报告。
+该字段标记为`sensitive`，输入内容会被遮蔽，并由Claude凭据机制保存，而不是
+明文写入插件设置。不要把Token发到聊天、写入Git、Shell历史、任务目录或验证报告。
+
+以后需要更换Token时，打开`/plugin`，在**Installed**中选择该插件，然后使用
+**Configure**。
+
+也可以在普通PowerShell中执行：
+
+```powershell
+claude plugin marketplace add LilianaZhu/regulation-to-markdown
+claude plugin install regulation-to-markdown@liliana-legal-tools --scope user
+```
+
+不要在共享电脑上通过`--config`直接传Token，否则它可能进入Shell历史。请使用
+Claude Code内置配置界面。
 
 ## 使用
 
 ```text
-/regulation-to-markdown:regulation-to-markdown @法规文件.pdf
+/regulation-to-markdown:regulation-to-markdown "C:\法规文件\官方原文.pdf"
 ```
+
+Claude Code CLI无需把PDF作为聊天附件上传。插件会读取上述本机路径；将PDF放在
+当前工作区中可减少文件权限确认。
 
 插件会：
 

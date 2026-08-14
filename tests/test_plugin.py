@@ -30,9 +30,13 @@ def test_agent_and_claude_plugin_manifests_and_skill():
     assert agent_manifest["$schema"].endswith("/1.0.0/plugin.schema.json")
     assert agent_manifest["name"] == "regulation-to-markdown"
     assert claude_manifest["name"] == "regulation-to-markdown"
-    assert claude_manifest["version"] == agent_manifest["version"] == "0.2.0"
-    assert claude_manifest["userConfig"]["mineru_api_token"]["sensitive"] is True
+    assert claude_manifest["version"] == agent_manifest["version"] == "0.2.1"
+    token_config = claude_manifest["userConfig"]["mineru_api_token"]
+    assert token_config["sensitive"] is True
+    assert token_config["required"] is True
+    assert "https://mineru.net/apiManage/token" in token_config["description"]
     assert marketplace["plugins"][0]["source"] == "./"
+    assert marketplace["plugins"][0]["version"] == claude_manifest["version"]
     assert agent_mcp["$schema"].endswith("/1.0.0/mcp.schema.json")
     assert "${PLUGIN_ROOT}" in json.dumps(agent_mcp)
     assert "${CLAUDE_PLUGIN_ROOT}" in json.dumps(claude_mcp)
@@ -54,6 +58,22 @@ def test_installer_targets_claude_plugin_workflow():
     assert "claude plugin marketplace add" in installer
     assert "claude plugin install" in installer
     assert ".cursor\\plugins\\local" not in installer
+
+
+def test_ci_validates_current_plugin_manifests():
+    workflow = (PROJECT_ROOT / ".github" / "workflows" / "ci.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert ".cursor-plugin/plugin.json" not in workflow
+    for manifest in (
+        "plugin.json",
+        "mcp.json",
+        ".mcp.json",
+        ".claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json",
+    ):
+        assert f'"{manifest}"' in workflow
 
 
 def test_mcp_exposes_expected_tools():

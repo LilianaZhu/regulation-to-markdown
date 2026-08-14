@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "regulation-to-markdown",
   "displayName": "Regulation to Markdown",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Convert official regulation PDFs to source-grounded Markdown with MinerU extraction, deterministic processing, AI review, and release validation.",
   "author": {
     "name": "LilianaZhu",
@@ -22,8 +22,8 @@
   "userConfig": {
     "mineru_api_token": {
       "type": "string",
-      "title": "MinerU API Token",
-      "description": "Create a token at https://mineru.net/apiManage/token. The value is stored securely and never written to plugin files or reports.",
+      "title": "MinerU API Token（必填）",
+      "description": "在 https://mineru.net/apiManage/token 创建并粘贴 Token。Claude Code 会遮蔽输入并安全保存；请勿在聊天中发送。",
       "sensitive": true,
       "required": true
     }

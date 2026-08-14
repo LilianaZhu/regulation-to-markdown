@@ -11,7 +11,14 @@
       "name": "regulation-to-markdown",
       "source": "./",
       "description": "Convert official regulation PDFs to verified Markdown.",
-      "version": "0.2.0"
+      "version": "0.2.1",
+      "category": "Productivity",
+      "tags": [
+        "pdf",
+        "markdown",
+        "legal",
+        "mineru"
+      ]
     }
   ]
 }

@@ -27,22 +27,46 @@ The shared `skills/` directory and Python MCP implementation are the single
 source package. Claude's installed cache and runtime under plugin data are
 managed artifacts, not editable source copies.
 
-## Install in Claude Code or Claude Desktop
+## Install in Claude Code CLI
 
-Add this repository as a marketplace:
+Requirements:
+
+- Claude Code 2.1.207 or newer;
+- Python 3.11 or newer available as `python`;
+- network access to GitHub, PyPI, MinerU, and MinerU's signed upload/download
+  hosts.
+
+In an interactive Claude Code session, add this GitHub repository and install
+the plugin:
 
 ```text
-/plugin marketplace add https://github.com/LilianaZhu/regulation-to-markdown
+/plugin marketplace add LilianaZhu/regulation-to-markdown
 /plugin install regulation-to-markdown@liliana-legal-tools
 /reload-plugins
 ```
 
-When enabling the plugin, enter the MinerU API Token created at:
+The install/enable flow opens Claude Code's configuration dialog. Paste the
+MinerU API Token created at:
 
 <https://mineru.net/apiManage/token>
 
-The option is declared sensitive and stored by Claude's credential mechanism.
-Never paste the Token into chat, Git, job files, or validation reports.
+The input is masked because the option is declared `sensitive`, and Claude Code
+stores it in its credential mechanism instead of plaintext plugin settings.
+Never paste the Token into chat, Git, job files, command history, or validation
+reports.
+
+To replace the Token later, open `/plugin`, select the plugin under
+**Installed**, and use **Configure**.
+
+The same installation can be started from a regular shell:
+
+```powershell
+claude plugin marketplace add LilianaZhu/regulation-to-markdown
+claude plugin install regulation-to-markdown@liliana-legal-tools --scope user
+```
+
+Do not pass the Token with `--config` on a shared machine because that would put
+it in shell history. Use the interactive configuration dialog.
 
 For local development:
 
@@ -67,10 +91,11 @@ not into the plugin source tree.
 
 ## Use
 
-Claude Code skill invocation:
+Claude Code does not need a chat attachment. Give the skill an accessible local
+PDF path (placing the PDF in the current workspace minimizes permission prompts):
 
 ```text
-/regulation-to-markdown:regulation-to-markdown @official-regulation.pdf
+/regulation-to-markdown:regulation-to-markdown "C:\path\to\official-regulation.pdf"
 ```
 
 Workflow:

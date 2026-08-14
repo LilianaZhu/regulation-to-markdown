@@ -33,6 +33,13 @@ jobs:
       - name: Validate plugin JSON
         shell: pwsh
         run: |
-          Get-Content -Raw .cursor-plugin/plugin.json | ConvertFrom-Json | Out-Null
-          Get-Content -Raw mcp.json | ConvertFrom-Json | Out-Null
+          @(
+            "plugin.json",
+            "mcp.json",
+            ".mcp.json",
+            ".claude-plugin/plugin.json",
+            ".claude-plugin/marketplace.json"
+          ) | ForEach-Object {
+            Get-Content -Raw $_ | ConvertFrom-Json | Out-Null
+          }
           [scriptblock]::Create((Get-Content -Raw install.ps1)) | Out-Null
