@@ -23,11 +23,6 @@ if ($Dev) {
     }
 }
 
-python (Join-Path $ProjectRoot "scripts\mcp_launcher.py") --install-only
-if ($LASTEXITCODE -ne 0) {
-    throw "Plugin runtime bootstrap failed."
-}
-
 if ($InstallClaudePlugin) {
     if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
         throw "Claude Code is required for -InstallClaudePlugin."
@@ -45,6 +40,12 @@ if ($InstallClaudePlugin) {
     }
     finally {
         Pop-Location
+    }
+}
+else {
+    python (Join-Path $ProjectRoot "scripts\mcp_launcher.py") --install-only
+    if ($LASTEXITCODE -ne 0) {
+        throw "Standalone plugin runtime bootstrap failed."
     }
 }
 

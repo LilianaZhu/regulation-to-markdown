@@ -23,6 +23,7 @@
    - local marketplace add/install
    - MinerU Token secure user configuration
    - first-run Python runtime bootstrap under plugin data
+   - bootstrap subprocesses do not inherit MinerU credential variables
 5. Test a short text PDF, a PDF over 200 pages, a scanned PDF, a cross-page
    table, and missing MinerU image output.
 6. Test visual-content policy cases:

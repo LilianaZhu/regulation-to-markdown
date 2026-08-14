@@ -58,6 +58,17 @@ reports.
 To replace the Token later, open `/plugin`, select the plugin under
 **Installed**, and use **Configure**.
 
+On first activation, the plugin creates an isolated Python runtime in Claude's
+persistent plugin-data directory and downloads the pinned dependencies from
+PyPI. This can take several minutes. The launcher removes the MinerU Token from
+the environment of `venv`, `pip`, and build subprocesses; only the final MCP
+server receives it. Check `bootstrap.log` in the plugin-data directory if the
+MCP server does not connect.
+
+Claude Code uses the macOS Keychain where supported. On platforms without a
+supported keychain, sensitive plugin configuration may be stored in
+`~/.claude/.credentials.json`; protect that file with user-only permissions.
+
 The same installation can be started from a regular shell:
 
 ```powershell

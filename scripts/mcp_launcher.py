@@ -6,7 +6,26 @@ import os
 import subprocess
 import sys
 import venv
+from contextlib import contextmanager
 from pathlib import Path
+
+_INSTALL_SECRET_NAMES = (
+    "MINERU_API_TOKEN",
+    "CLAUDE_PLUGIN_OPTION_MINERU_API_TOKEN",
+)
+
+
+@contextmanager
+def _without_install_secrets():
+    removed = {
+        name: os.environ.pop(name)
+        for name in _INSTALL_SECRET_NAMES
+        if name in os.environ
+    }
+    try:
+        yield
+    finally:
+        os.environ.update(removed)
 
 
 def _plugin_root(explicit: str | None = None) -> Path:
@@ -72,26 +91,28 @@ def _install(root: Path, data: Path) -> Path:
         return runtime_python
 
     log = data / "bootstrap.log"
-    if not runtime_python.is_file():
-        venv.EnvBuilder(with_pip=True, clear=True).create(runtime)
-    with log.open("a", encoding="utf-8") as handle:
-        handle.write(f"\nInstalling plugin fingerprint {fingerprint}\n")
-        completed = subprocess.run(
-            [
-                str(runtime_python),
-                "-m",
-                "pip",
-                "install",
-                "--disable-pip-version-check",
-                "--no-input",
-                "--upgrade",
-                str(root),
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=handle,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
+    with _without_install_secrets():
+        if not runtime_python.is_file():
+            venv.EnvBuilder(with_pip=True, clear=True).create(runtime)
+        with log.open("a", encoding="utf-8") as handle:
+            handle.write(f"\nInstalling plugin fingerprint {fingerprint}\n")
+            completed = subprocess.run(
+                [
+                    str(runtime_python),
+                    "-m",
+                    "pip",
+                    "install",
+                    "--disable-pip-version-check",
+                    "--no-input",
+                    "--upgrade",
+                    str(root),
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=handle,
+                stderr=subprocess.STDOUT,
+                env=os.environ.copy(),
+                check=False,
+            )
     if completed.returncode != 0:
         raise RuntimeError(f"Python bootstrap failed. See {log}")
     marker.write_text(fingerprint + "\n", encoding="utf-8")

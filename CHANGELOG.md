@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.2 - 2026-08-14
+
+- Prevent MinerU credential variables from reaching venv, pip, or Python build
+  subprocesses during first-run bootstrap.
+- Avoid creating an unused standalone runtime before local Marketplace installs.
+- Document the automatic first-run runtime and platform-specific credential
+  storage behavior.
+
 ## 0.2.1 - 2026-08-14
 
 - Make the GitHub marketplace installation path explicit for Claude Code CLI.

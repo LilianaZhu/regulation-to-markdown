@@ -53,6 +53,14 @@ MinerU API Token：
 以后需要更换Token时，打开`/plugin`，在**Installed**中选择该插件，然后使用
 **Configure**。
 
+首次启用时，插件会在Claude持久化插件数据目录中创建隔离的Python运行环境，
+并从PyPI下载已固定版本的依赖，可能需要几分钟。启动器会从`venv`、`pip`和构建
+子进程的环境中移除MinerU Token，只有最终MCP进程能够收到Token。如果MCP未连接，
+请检查插件数据目录中的`bootstrap.log`。
+
+在支持的平台上，Claude Code使用macOS Keychain；在没有受支持密钥链的平台上，
+敏感配置可能保存在`~/.claude/.credentials.json`。请确保该文件仅当前用户可读。
+
 也可以在普通PowerShell中执行：
 
 ```powershell

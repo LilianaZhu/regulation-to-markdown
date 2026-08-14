@@ -13,17 +13,20 @@ repairing source text.
 
 ## First-run setup
 
-If the `regulation-to-markdown` MCP tools are unavailable:
+On first activation, the bundled MCP launcher creates an isolated Python runtime
+under the host's persistent plugin-data directory and installs the pinned Python
+dependencies listed in `pyproject.toml`. This requires PyPI access and can take
+several minutes. The MinerU Token is removed from the environment of every
+bootstrap subprocess and is restored only for the final MCP server.
 
-1. In Claude Code, ask permission to run the bundled MCP launcher with
-   `--install-only`, `--plugin-root "${CLAUDE_PLUGIN_ROOT}"`, and
-   `--data-dir "${CLAUDE_PLUGIN_DATA}"`. In another Agent Plugin client,
-   resolve this Skill's bundled
-   `scripts/bootstrap.py` to an absolute path and ask permission to run it.
-2. Tell the user to reload plugins or restart the agent client after installation.
-3. Stop the document workflow until the MCP server is available.
+If the `regulation-to-markdown` MCP tools remain unavailable, tell the user to:
 
-Do not install dependencies silently.
+1. inspect `bootstrap.log` under the plugin-data directory;
+2. confirm Python 3.11+ is available as `python` and PyPI is reachable;
+3. run `/reload-plugins` or restart Claude Code.
+
+Stop the document workflow until the MCP server is available. Never ask the user
+to paste the MinerU Token into chat or a shell command.
 
 ## Non-negotiable rules
 
