@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import io
+import json
 import zipfile
 
 import httpx
 import pytest
 import respx
 
-from regulation_to_markdown import mineru
+from regulation_to_markdown import credentials, mineru
 from regulation_to_markdown.mcp_server import _match_results_to_batches
 from regulation_to_markdown.mineru import MinerUClient, MinerUError
 from regulation_to_markdown.models import MinerUResult, PageBatch
@@ -114,11 +115,49 @@ def test_mineru_download_enforces_size_limit(tmp_path, monkeypatch):
     assert not (tmp_path / "raw" / "001-large.zip").exists()
 
 
-def test_mineru_ignores_unresolved_token_placeholders(monkeypatch):
+def test_mineru_ignores_unresolved_token_placeholders(monkeypatch, tmp_path):
+    monkeypatch.setenv("REG2MD_PLUGIN_DATA", str(tmp_path))
     monkeypatch.setenv("MINERU_API_TOKEN", "${user_config.mineru_api_token}")
 
-    with pytest.raises(MinerUError, match="MINERU_API_TOKEN is required"):
+    with pytest.raises(MinerUError, match="No MinerU API token is reachable"):
         MinerUClient()
+
+
+def test_mineru_reads_token_from_credentials_file(monkeypatch, tmp_path):
+    monkeypatch.setenv("REG2MD_PLUGIN_DATA", str(tmp_path))
+    monkeypatch.delenv("MINERU_API_TOKEN", raising=False)
+    credentials.write_stored_token("stored-token")
+
+    with MinerUClient() as client:
+        assert client._token == "stored-token"
+
+
+def test_mineru_prefers_host_environment_over_stored_token(monkeypatch, tmp_path):
+    monkeypatch.setenv("REG2MD_PLUGIN_DATA", str(tmp_path))
+    credentials.write_stored_token("stored-token")
+    monkeypatch.setenv("MINERU_API_TOKEN", "environment-token")
+
+    with MinerUClient() as client:
+        assert client._token == "environment-token"
+
+
+def test_credentials_file_survives_unrelated_keys(monkeypatch, tmp_path):
+    monkeypatch.setenv("REG2MD_PLUGIN_DATA", str(tmp_path))
+    path = credentials.credentials_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"unrelated": "keep-me"}), encoding="utf-8")
+
+    credentials.write_stored_token("stored-token")
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload == {"unrelated": "keep-me", "mineru_api_token": "stored-token"}
+
+
+def test_credentials_reject_unresolved_placeholder(monkeypatch, tmp_path):
+    monkeypatch.setenv("REG2MD_PLUGIN_DATA", str(tmp_path))
+
+    with pytest.raises(ValueError):
+        credentials.write_stored_token("${user_config.mineru_api_token}")
 
 
 def test_mineru_redacts_signed_url_query():

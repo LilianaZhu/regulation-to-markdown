@@ -27,6 +27,38 @@ The shared `skills/` directory and Python MCP implementation are the single
 source package. Claude's installed cache and runtime under plugin data are
 managed artifacts, not editable source copies.
 
+## Install with a coding agent (any host)
+
+Send this repository's URL to your coding agent and ask it to install the
+plugin. Agents read [`AGENTS.md`](AGENTS.md), which documents the flow below.
+
+```bash
+git clone https://github.com/LilianaZhu/regulation-to-markdown.git
+cd regulation-to-markdown
+python scripts/setup.py
+```
+
+`scripts/setup.py` uses only the standard library, so it runs before the
+plugin's runtime exists. It builds the isolated runtime, prompts for the MinerU
+API Token with hidden input, stores the token in
+`~/.regulation-to-markdown/credentials.json` with owner-only permissions, and
+registers the MCP server in every coding agent it detects. Restart the agent
+afterwards, or run `Developer: Reload Window` in Cursor.
+
+The server reads the token from that credentials file, so it does not depend on
+the host forwarding environment variables. Setting `MINERU_API_TOKEN` in your
+operating system still works on hosts that do forward it, and takes precedence
+when present, but it is no longer required.
+
+Useful flags:
+
+| Command | Effect |
+| --- | --- |
+| `python scripts/setup.py --print-config` | Show the MCP entry, change nothing |
+| `python scripts/setup.py --host cursor` | Register one host only |
+| `python scripts/setup.py --host none` | Store the token and print the entry to add manually |
+| `python scripts/setup.py --skip-runtime` | Rotate the token without rebuilding the runtime |
+
 ## Install in Claude Code CLI
 
 Requirements:
@@ -93,18 +125,23 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1 -Dev -InstallClaudePlugin
 
 ## Other Agent Plugin clients
 
-Clients implementing Agent Plugins 1.0.0 can load the root `plugin.json` and
-`mcp.json`. Because the portable standard does not define credential storage,
-set `MINERU_API_TOKEN` in the host environment before enabling MCP.
+Clients implementing Agent Plugins 1.0.0 auto-load the root `plugin.json` and
+`mcp.json`. That path works only on hosts that expand `${PLUGIN_ROOT}` and
+`${PLUGIN_DATA}`, because the launcher is invoked through a templated path: a
+host that leaves the placeholder in `args` unexpanded never starts the process
+at all, so the launcher's own fallbacks cannot help.
 
-Hosts that expand `${PLUGIN_ROOT}`, `${PLUGIN_DATA}`, `${CLAUDE_PLUGIN_ROOT}`,
-or `${CLAUDE_PLUGIN_DATA}` keep their isolated plugin-data directory. Hosts that
-leave those placeholders unsubstituted — including current Cursor and some
-ChatGPT plugin loaders — are ignored by the launcher, which then uses the
-plugin files next to `scripts/mcp_launcher.py` and stores the runtime in
-`~/.regulation-to-markdown`. Unexpanded token placeholders such as
-`${user_config.mineru_api_token}` are also ignored; set a real
-`MINERU_API_TOKEN` in that host's environment.
+Cursor and some ChatGPT plugin loaders behave that way, and they additionally
+do not forward inherited environment variables to stdio MCP servers, so a
+`MINERU_API_TOKEN` exported in your shell or set as a user-level variable never
+reaches the server. **On those hosts, run `python scripts/setup.py` instead of
+relying on auto-load.** It writes absolute paths and a credentials file, which
+sidesteps both problems. If a host auto-loads the plugin *and* you ran the
+setup script, disable the auto-loaded copy so you do not end up with two
+servers sharing one name.
+
+Unexpanded token placeholders such as `${user_config.mineru_api_token}` are
+always ignored rather than sent to MinerU.
 
 The MCP runtime is installed into the client's persistent plugin data directory,
 not into the plugin source tree.

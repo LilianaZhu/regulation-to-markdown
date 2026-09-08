@@ -26,6 +26,34 @@ mcp.json                        Agent Plugins MCP配置
 仓库本身是唯一可编辑源码包。Claude安装后的cache和插件数据目录由系统管理，
 不应手工修改。
 
+## 用编码agent安装（适用于所有宿主）
+
+把本仓库地址发给你的编码agent，让它安装插件即可。agent会读取
+[`AGENTS.md`](AGENTS.md)，其中记录了下面这套流程。
+
+```bash
+git clone https://github.com/LilianaZhu/regulation-to-markdown.git
+cd regulation-to-markdown
+python scripts/setup.py
+```
+
+`scripts/setup.py`只依赖标准库，因此在插件运行时尚未建立时就能执行。它会构建
+隔离运行时，以隐藏输入方式提示你粘贴MinerU API Token，把Token以仅属主可读的
+权限存入`~/.regulation-to-markdown/credentials.json`，并向检测到的每个编码
+agent注册MCP服务器。完成后重启agent，Cursor中执行`Developer: Reload Window`。
+
+服务器直接从该凭据文件读取Token，因此**不再依赖宿主透传环境变量**。在会透传的
+宿主上设置`MINERU_API_TOKEN`依然有效且优先级更高，但已不是必需。
+
+常用参数：
+
+| 命令 | 作用 |
+| --- | --- |
+| `python scripts/setup.py --print-config` | 只打印MCP条目，不做任何写入 |
+| `python scripts/setup.py --host cursor` | 只注册指定宿主 |
+| `python scripts/setup.py --host none` | 只存Token并打印条目，供手工添加 |
+| `python scripts/setup.py --skip-runtime` | 不重建运行时，仅轮换Token |
+
 ## 在Claude Code CLI安装
 
 要求：
@@ -103,19 +131,19 @@ plugin.json
 mcp.json
 ```
 
-由于开放标准暂未定义通用凭据存储，其他客户端需在宿主环境中配置：
+这条自动加载路径只在会展开`${PLUGIN_ROOT}`、`${PLUGIN_DATA}`的宿主上有效。
+启动器本身是通过带占位符的路径被调用的：宿主若不展开`args`里的占位符，进程
+根本起不来，启动器内部那套回退逻辑也就没有机会执行。
 
-```text
-MINERU_API_TOKEN
-```
+Cursor和部分ChatGPT插件加载方式正属于这种情况，并且它们不会把继承来的环境
+变量透传给stdio MCP服务器——你在shell里export或设成用户级变量的
+`MINERU_API_TOKEN`都到不了服务器进程。**在这类宿主上请改用
+`python scripts/setup.py`，不要依赖自动加载。** 该脚本写入绝对路径和凭据
+文件，同时绕开上述两个问题。如果宿主已自动加载插件而你又跑了安装脚本，请
+关闭自动加载的那一份，避免出现两个同名服务器。
 
-会展开`${PLUGIN_ROOT}`、`${PLUGIN_DATA}`、`${CLAUDE_PLUGIN_ROOT}`、
-`${CLAUDE_PLUGIN_DATA}`的宿主继续使用各自的隔离插件数据目录。不展开这些
-占位符的宿主（当前包括Cursor，以及部分ChatGPT插件加载方式）会被启动器忽略，
-改为使用`scripts/mcp_launcher.py`所在插件目录，并把运行时装到
-`~/.regulation-to-markdown`。未展开的Token占位符（例如
-`${user_config.mineru_api_token}`）同样会被忽略，需要在该宿主环境中设置真实的
-`MINERU_API_TOKEN`。
+未展开的Token占位符（例如`${user_config.mineru_api_token}`）一律被忽略，不会
+发往MinerU。
 
 ## 本地开发
 

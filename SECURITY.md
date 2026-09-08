@@ -8,8 +8,12 @@ Security fixes are applied to the latest release on the `main` branch.
 
 - Never commit MinerU tokens, `.env` files, official PDFs, split PDFs, signed
   download URLs, MinerU ZIPs, findings, repair evidence, or job state.
-- In Claude Code, configure the sensitive `mineru_api_token` plugin option. In
-  other Agent Plugin clients, set `MINERU_API_TOKEN` in the host environment.
+- In Claude Code, configure the sensitive `mineru_api_token` plugin option. On
+  every other host, run `python scripts/setup.py`, which prompts with hidden
+  input and stores the token in `~/.regulation-to-markdown/credentials.json`
+  with owner-only permissions. Prefer the prompt over `--token`, which would
+  leave the secret in shell history. Setting `MINERU_API_TOKEN` in the host
+  environment still takes precedence where the host forwards it.
   Unsubstituted placeholders such as `${user_config.mineru_api_token}` are
   ignored and must not be sent to MinerU.
 - The launcher removes MinerU credential variables before creating the virtual

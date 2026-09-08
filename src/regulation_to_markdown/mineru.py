@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 import time
 import zipfile
@@ -9,6 +8,7 @@ from typing import Any, Self
 
 import httpx
 
+from .credentials import credentials_path, resolve_token
 from .models import MinerUResult, PageBatch
 
 MINERU_API_BASE = "https://mineru.net/api/v4"
@@ -21,16 +21,6 @@ MAX_COMPRESSION_RATIO = 1_000
 
 class MinerUError(RuntimeError):
     pass
-
-
-_UNRESOLVED_TEMPLATE = re.compile(r"\$\{[^}]+\}")
-
-
-def _env_credential(name: str) -> str:
-    value = os.environ.get(name, "")
-    if not value or _UNRESOLVED_TEMPLATE.search(value):
-        return ""
-    return value
 
 
 def _redact_url_queries(message: object) -> str:
@@ -46,11 +36,15 @@ class MinerUClient:
         timeout_seconds: float = 60,
         max_retries: int = 3,
     ):
-        self._token = token or _env_credential("MINERU_API_TOKEN")
+        self._token = resolve_token(token)
         if not self._token:
             raise MinerUError(
-                "MINERU_API_TOKEN is required. Configure the plugin's MinerU API "
-                "Token option or set the environment variable."
+                "No MinerU API token is reachable. Run "
+                "`python scripts/setup.py` in the plugin directory to store one at "
+                f"{credentials_path()}. Setting MINERU_API_TOKEN in your operating "
+                "system alone is not enough: several hosts, including Cursor, do "
+                "not forward inherited environment variables to stdio MCP servers, "
+                "so the variable never reaches this process."
             )
         self.base_url = base_url.rstrip("/")
         self.max_retries = max_retries
