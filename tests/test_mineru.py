@@ -114,6 +114,13 @@ def test_mineru_download_enforces_size_limit(tmp_path, monkeypatch):
     assert not (tmp_path / "raw" / "001-large.zip").exists()
 
 
+def test_mineru_ignores_unresolved_token_placeholders(monkeypatch):
+    monkeypatch.setenv("MINERU_API_TOKEN", "${user_config.mineru_api_token}")
+
+    with pytest.raises(MinerUError, match="MINERU_API_TOKEN is required"):
+        MinerUClient()
+
+
 def test_mineru_redacts_signed_url_query():
     message = mineru._redact_url_queries(
         "PUT https://upload.test/file?signature=top-secret&expires=1 failed"

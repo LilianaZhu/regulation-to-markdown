@@ -17,13 +17,16 @@ On first activation, the bundled MCP launcher creates an isolated Python runtime
 under the host's persistent plugin-data directory and installs the pinned Python
 dependencies listed in `pyproject.toml`. This requires PyPI access and can take
 several minutes. The MinerU Token is removed from the environment of every
-bootstrap subprocess and is restored only for the final MCP server.
+bootstrap subprocess and is restored only for the final MCP server. Hosts that
+leave `${CLAUDE_PLUGIN_DATA}` or `${PLUGIN_DATA}` unsubstituted fall back to
+`~/.regulation-to-markdown`.
 
 If the `regulation-to-markdown` MCP tools remain unavailable, tell the user to:
 
-1. inspect `bootstrap.log` under the plugin-data directory;
+1. inspect `bootstrap.log` under the plugin-data directory or
+   `~/.regulation-to-markdown`;
 2. confirm Python 3.11+ is available as `python` and PyPI is reachable;
-3. run `/reload-plugins` or restart Claude Code.
+3. reload plugins or restart the agent client.
 
 Stop the document workflow until the MCP server is available. Never ask the user
 to paste the MinerU Token into chat or a shell command.

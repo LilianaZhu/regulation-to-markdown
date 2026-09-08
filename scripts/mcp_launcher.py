@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import re
 import subprocess
 import sys
 import venv
@@ -13,6 +14,34 @@ _INSTALL_SECRET_NAMES = (
     "MINERU_API_TOKEN",
     "CLAUDE_PLUGIN_OPTION_MINERU_API_TOKEN",
 )
+_HOST_TEMPLATE_ENV = (
+    "REG2MD_PLUGIN_ROOT",
+    "REG2MD_PLUGIN_DATA",
+    "CLAUDE_PLUGIN_ROOT",
+    "CLAUDE_PLUGIN_DATA",
+    "PLUGIN_ROOT",
+    "PLUGIN_DATA",
+    *_INSTALL_SECRET_NAMES,
+)
+_UNRESOLVED_TEMPLATE = re.compile(r"\$\{[^}]+\}")
+
+
+def _has_unresolved_template(value: str | None) -> bool:
+    return bool(value and _UNRESOLVED_TEMPLATE.search(value))
+
+
+def _omit_unresolved_templates(env: dict[str, str]) -> dict[str, str]:
+    cleaned = dict(env)
+    for name in _HOST_TEMPLATE_ENV:
+        if _has_unresolved_template(cleaned.get(name)):
+            del cleaned[name]
+    return cleaned
+
+
+def _configured_path(value: str | None) -> Path | None:
+    if not value or _has_unresolved_template(value):
+        return None
+    return Path(value).expanduser().resolve()
 
 
 @contextmanager
@@ -29,27 +58,20 @@ def _without_install_secrets():
 
 
 def _plugin_root(explicit: str | None = None) -> Path:
-    if explicit:
-        return Path(explicit).expanduser().resolve()
-    configured = os.environ.get("REG2MD_PLUGIN_ROOT")
-    return (
-        Path(configured).expanduser().resolve()
-        if configured
-        else Path(__file__).resolve().parents[1]
-    )
+    for candidate in (explicit, os.environ.get("REG2MD_PLUGIN_ROOT")):
+        path = _configured_path(candidate)
+        if path is not None and (path / "pyproject.toml").is_file():
+            return path
+    return Path(__file__).resolve().parents[1]
 
 
 def _plugin_data(explicit: str | None = None) -> Path:
-    if explicit:
-        data = Path(explicit).expanduser().resolve()
-        data.mkdir(parents=True, exist_ok=True)
-        return data
-    configured = os.environ.get("REG2MD_PLUGIN_DATA")
-    data = (
-        Path(configured).expanduser().resolve()
-        if configured
-        else Path.home() / ".regulation-to-markdown"
-    )
+    for candidate in (explicit, os.environ.get("REG2MD_PLUGIN_DATA")):
+        path = _configured_path(candidate)
+        if path is not None:
+            path.mkdir(parents=True, exist_ok=True)
+            return path
+    data = Path.home() / ".regulation-to-markdown"
     data.mkdir(parents=True, exist_ok=True)
     return data
 
@@ -110,13 +132,17 @@ def _install(root: Path, data: Path) -> Path:
                 stdin=subprocess.DEVNULL,
                 stdout=handle,
                 stderr=subprocess.STDOUT,
-                env=os.environ.copy(),
+                env=_omit_unresolved_templates(os.environ.copy()),
                 check=False,
             )
     if completed.returncode != 0:
         raise RuntimeError(f"Python bootstrap failed. See {log}")
     marker.write_text(fingerprint + "\n", encoding="utf-8")
     return runtime_python
+
+
+def _runtime_environ() -> dict[str, str]:
+    return _omit_unresolved_templates(os.environ.copy())
 
 
 def main() -> int:
@@ -141,6 +167,7 @@ def main() -> int:
         stdin=sys.stdin,
         stdout=sys.stdout,
         stderr=sys.stderr,
+        env=_runtime_environ(),
     )
 
 

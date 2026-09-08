@@ -97,6 +97,15 @@ Clients implementing Agent Plugins 1.0.0 can load the root `plugin.json` and
 `mcp.json`. Because the portable standard does not define credential storage,
 set `MINERU_API_TOKEN` in the host environment before enabling MCP.
 
+Hosts that expand `${PLUGIN_ROOT}`, `${PLUGIN_DATA}`, `${CLAUDE_PLUGIN_ROOT}`,
+or `${CLAUDE_PLUGIN_DATA}` keep their isolated plugin-data directory. Hosts that
+leave those placeholders unsubstituted — including current Cursor and some
+ChatGPT plugin loaders — are ignored by the launcher, which then uses the
+plugin files next to `scripts/mcp_launcher.py` and stores the runtime in
+`~/.regulation-to-markdown`. Unexpanded token placeholders such as
+`${user_config.mineru_api_token}` are also ignored; set a real
+`MINERU_API_TOKEN` in that host's environment.
+
 The MCP runtime is installed into the client's persistent plugin data directory,
 not into the plugin source tree.
 

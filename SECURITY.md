@@ -10,6 +10,8 @@ Security fixes are applied to the latest release on the `main` branch.
   download URLs, MinerU ZIPs, findings, repair evidence, or job state.
 - In Claude Code, configure the sensitive `mineru_api_token` plugin option. In
   other Agent Plugin clients, set `MINERU_API_TOKEN` in the host environment.
+  Unsubstituted placeholders such as `${user_config.mineru_api_token}` are
+  ignored and must not be sent to MinerU.
 - The launcher removes MinerU credential variables before creating the virtual
   environment or invoking pip/build subprocesses, then restores them only for
   the final MCP server process.

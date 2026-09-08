@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.3 - 2026-09-08
+
+- Ignore unsubstituted host placeholders such as `${CLAUDE_PLUGIN_DATA}` and
+  `${user_config.mineru_api_token}` so Cursor, ChatGPT, and other clients that
+  do not expand Claude/Agent Plugin variables can still bootstrap.
+- Fall back to the launcher directory and `~/.regulation-to-markdown` when a
+  host leaves plugin path variables unresolved.
+
 ## 0.2.2 - 2026-08-14
 
 - Prevent MinerU credential variables from reaching venv, pip, or Python build

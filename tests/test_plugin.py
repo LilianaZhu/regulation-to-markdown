@@ -30,7 +30,7 @@ def test_agent_and_claude_plugin_manifests_and_skill():
     assert agent_manifest["$schema"].endswith("/1.0.0/plugin.schema.json")
     assert agent_manifest["name"] == "regulation-to-markdown"
     assert claude_manifest["name"] == "regulation-to-markdown"
-    assert claude_manifest["version"] == agent_manifest["version"] == "0.2.2"
+    assert claude_manifest["version"] == agent_manifest["version"] == "0.2.3"
     token_config = claude_manifest["userConfig"]["mineru_api_token"]
     assert token_config["sensitive"] is True
     assert token_config["required"] is True

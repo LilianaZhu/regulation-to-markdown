@@ -23,6 +23,16 @@ class MinerUError(RuntimeError):
     pass
 
 
+_UNRESOLVED_TEMPLATE = re.compile(r"\$\{[^}]+\}")
+
+
+def _env_credential(name: str) -> str:
+    value = os.environ.get(name, "")
+    if not value or _UNRESOLVED_TEMPLATE.search(value):
+        return ""
+    return value
+
+
 def _redact_url_queries(message: object) -> str:
     return re.sub(r"(https?://[^\s?]+)\?[^\s]+", r"\1?<redacted>", str(message))
 
@@ -36,7 +46,7 @@ class MinerUClient:
         timeout_seconds: float = 60,
         max_retries: int = 3,
     ):
-        self._token = token or os.environ.get("MINERU_API_TOKEN", "")
+        self._token = token or _env_credential("MINERU_API_TOKEN")
         if not self._token:
             raise MinerUError(
                 "MINERU_API_TOKEN is required. Configure the plugin's MinerU API "

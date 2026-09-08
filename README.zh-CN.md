@@ -109,6 +109,14 @@ mcp.json
 MINERU_API_TOKEN
 ```
 
+会展开`${PLUGIN_ROOT}`、`${PLUGIN_DATA}`、`${CLAUDE_PLUGIN_ROOT}`、
+`${CLAUDE_PLUGIN_DATA}`的宿主继续使用各自的隔离插件数据目录。不展开这些
+占位符的宿主（当前包括Cursor，以及部分ChatGPT插件加载方式）会被启动器忽略，
+改为使用`scripts/mcp_launcher.py`所在插件目录，并把运行时装到
+`~/.regulation-to-markdown`。未展开的Token占位符（例如
+`${user_config.mineru_api_token}`）同样会被忽略，需要在该宿主环境中设置真实的
+`MINERU_API_TOKEN`。
+
 ## 本地开发
 
 ```powershell
